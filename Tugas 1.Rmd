@@ -1,7 +1,7 @@
 ---
 title: "Pertemuan 1 - Pemulusan"
 author: "Dewi Kunthi Siswati Suryo"
-date: "2023-08-29"
+date: "2023-09-04"
 output:
   html_document : default
   pdf_document  : default
@@ -15,8 +15,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Library / Packages
 
 ```{r}
-#install.packages("forecast")
-#install.packages("graphics")
-#install.packages("TTR")
-#install.packages("TSA")
+library("forecast")
+library("graphics")
+library("TTR")
+library("TSA")
 ```
+
+## Impor Data
+
+```{r}
+#install.packages("rio") #install jika belum ada
+library(rio)
+data <- import("https://raw.githubusercontent.com/rizkynurhambali/Praktikum-MPDW-2324/main/Pertemuan%201/Data_1.csv")
+```
+
+

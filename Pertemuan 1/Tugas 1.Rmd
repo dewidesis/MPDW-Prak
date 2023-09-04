@@ -562,7 +562,7 @@ colnames(akurasitestingdes) <- c("des ske1","des ske2","des opt")
 akurasitestingdes
 ```
 
-#### Perbandingan SES dan DES
+#### Perbandingan SES dan DES S
 
 ```{r}
 MSEfull <-

@@ -1,0 +1,22 @@
+---
+title: "Pertemuan 1 - Pemulusan"
+author: "Dewi Kunthi Siswati Suryo"
+date: "2023-08-29"
+output:
+  html_document : default
+  pdf_document  : default
+  word_document : default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Library / Packages
+
+```{r}
+#install.packages("forecast")
+#install.packages("graphics")
+#install.packages("TTR")
+#install.packages("TSA")
+```

@@ -278,11 +278,11 @@ Pemulusan dengan metode SES dapat dilakukan dengan dua fungsi dari *packages* be
 
 ```{r}
 #Cara 1 (fungsi ses)
-ses.1 <- ses(train.ts, h = 10, alpha = 0.2)
+ses.1 <- ses(train.ts, h = 87, alpha = 0.2)
 plot(ses.1)
 ses.1
 
-ses.2<- ses(train.ts, h = 10, alpha = 0.7)
+ses.2<- ses(train.ts, h = 87, alpha = 0.7)
 plot(ses.2)
 ses.2
 ```
@@ -307,14 +307,14 @@ ses1<- HoltWinters(train.ts, gamma = FALSE, beta = FALSE, alpha = 0.2)
 plot(ses1)
 
 #ramalan
-ramalan1<- forecast(ses1, h=10)
+ramalan1<- forecast(ses1, h=87)
 ramalan1
 
 ses2<- HoltWinters(train.ts, gamma = FALSE, beta = FALSE, alpha = 0.7)
 plot(ses2)
 
 #ramalan
-ramalan2<- forecast(ses2, h=10)
+ramalan2<- forecast(ses2, h=87)
 ramalan2
 ```
 
@@ -324,7 +324,7 @@ Nilai parameter $\alpha$ dari kedua fungsi dapat dioptimalkan menyesuaikan dari 
 
 ```{r}
 #SES
-ses.opt <- ses(train.ts, h = 10, alpha = NULL)
+ses.opt <- ses(train.ts, h = 87, alpha = NULL)
 plot(ses.opt)
 ses.opt
 
@@ -334,7 +334,7 @@ sesopt
 plot(sesopt)
 
 #ramalan
-ramalanopt<- forecast(sesopt, h=10)
+ramalanopt<- forecast(sesopt, h=87)
 ramalanopt
 ```
 
@@ -459,7 +459,7 @@ des.1<- HoltWinters(train.ts, gamma = FALSE, beta = 0.2, alpha = 0.2)
 plot(des.1)
 
 #ramalan
-ramalandes1<- forecast(des.1, h=10)
+ramalandes1<- forecast(des.1, h=87)
 ramalandes1
 
 #Lamda=0.6 dan gamma=0.3
@@ -467,7 +467,7 @@ des.2<- HoltWinters(train.ts, gamma = FALSE, beta = 0.3, alpha = 0.6)
 plot(des.2)
 
 #ramalan
-ramalandes2<- forecast(des.2, h=10)
+ramalandes2<- forecast(des.2, h=87)
 ramalandes2
 ```
 
@@ -489,7 +489,7 @@ des.opt
 plot(des.opt)
 
 #ramalan
-ramalandesopt<- forecast(des.opt, h=10)
+ramalandesopt<- forecast(des.opt, h=87)
 ramalandesopt
 ```
 
@@ -537,7 +537,7 @@ selisihdes1
 
 SSEtestingdes1<-sum(selisihdes1^2)
 MSEtestingdes1<-SSEtestingdes1/length(testing$Open)
-MAPEtestingdes1<-sum(abs(selisihdes1/testing$Yt)*100)/length(testing$Open)
+MAPEtestingdes1<-sum(abs(selisihdes1/testing$Open)*100)/length(testing$Open)
 
 selisihdes2<-ramalandes2$mean-testing$Open
 selisihdes2
@@ -562,7 +562,7 @@ colnames(akurasitestingdes) <- c("des ske1","des ske2","des opt")
 akurasitestingdes
 ```
 
-#### Perbandingan SES dan DES S
+#### Perbandingan SES dan DES
 
 ```{r}
 MSEfull <-
@@ -573,4 +573,4 @@ colnames(MSEfull) <- c("ses","des")
 MSEfull
 ```
 
-Kedua metode dapat dibandingkan dengan menggunakan ukuran akurasi yang sama. Contoh di atas adalah perbandingan kedua metode dengan ukuran akurasi MSE. Hasilnya didapatkan metode DES lebih baik dibandingkan metode SES dilihat dari MSE yang lebih kecil nilainya.
+Kedua metode dapat dibandingkan dengan menggunakan ukuran akurasi yang sama. Contoh di atas adalah perbandingan kedua metode dengan ukuran akurasi MSE. Hasilnya didapatkan metode SES lebih baik dibandingkan metode DES dilihat dari MSE yang lebih kecil nilainya.

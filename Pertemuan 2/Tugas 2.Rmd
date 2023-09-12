@@ -1,1 +1,271 @@
+---
+title: "Pertemuan 2 - Regresi
+author: "Dewi Kunthi Siswati Suryo"
+date: "2023-09-10"
+output:
+  pdf_document  : default
+  html_document : default
+  word_document : default
+---
+
+## Pemanggilan *Packages*
+
+```{r}
+library(forecast)
+library(graphics)
+library(TTR)
+library(TSA)
+library(rio)
+library(ggplot2)
+library(lmtest)
+library(orcutt)
+library(HoRM)
+library(corrplot)
+library(RColorBrewer)
+library(scales)
+library(dplyr)
+library(knitr)
+```
+
+## Input Data
+
+Data yang digunakan adalah Air Quality New Delhi.
+
+```{r}
+data <- import("https://raw.githubusercontent.com/dewidesis/MPDW-Prak/main/Pertemuan%202/data_wine.csv")
+View(data)
+
+flip <- function(data){
+  new <- data[rev(rownames(data)),]
+  rownames(new) <- NULL
+  new
+}
+
+data <- flip(data)
+View(data)
+```
+
+## Eksplorasi Data
+
+Sebelum melakukan regresi, akan diperlihatkan *plot time-series*.
+
+```{r}
+# Eksplorasi Data
+summary(data)
+
+# Membuat Matriks Korelasi
+matriks <- cor(data)
+matriks
+
+corrplot.mixed(matriks, upper = 'circle', lower = 'number', order = "original",
+               tl.col="black", tl.pos = "lt",diag = 'l',
+               number.digits=2, number.cex=1)
+```
+Matriks korelasi di atas menunjukkan hubungan positif yang kuat antar semua peubah penjelas dengan peubah respon.
+Peubah respon : Harga
+Peubah penjelas : Tahun, Panen, Produksi
+```{r}
+#Membuat Objek Time Series
+data.ts <- ts(data$Harga)
+
+#Plot Time Series
+ts.plot(data.ts, xlab = "Time Series",
+        ylab = "Harga", 
+        main = "Time Series Plot of Harga")
+points(data.ts)
+```
+Dapat dilihat pada time series plot di atas bahwa data tersebut berpola tren.
+
+## Regresi
+
+```{r}
+#Pembuatan Model Regresi
+#Model Regresi
+model <- lm(Harga~Tahun+Panen+Produksi, data=data)
+summary(model)
+```
+$$y_i =-2.195*10^4+1.122*10^1X1+3.139*10^2X2-3.525*10^3X3$$
+Pada model regresi di atas dapat dilihat bahwa ketiga peubah penjelas yang digunakan berpengaruh signifikan terhadap peubah respon dengan Koefisien Determinasi sebesar 73.91%. 
+Hasil uji F memiliki $$p value < \alpha$$ 5%. (Tolak H0). Yang berarti, minimal terdapat satu peubah penjelas yang berpengaruh signifikan terhadap peubah respon. Diperoleh nilai $$R^2 = 0.7391$$. Artinya sebesar 73.91% keragaman nilai peubah respon dapat dijelaskan oleh model yang telah dibentuk. Hasil tersebut menunjukkan hasil yang bagus, seolah mendapatkan hasil terbaik. Namun pengujian asumsi tetap perlu dilakukan. 
+
+```{r}
+#Melakukan uji terhadap sisaan
+#Sisaan dan Fitted Value
+sisaan <- residuals(model)
+fittedvalue <- predict(model)
+```
+
+```{r}
+#Diagnostik dengan Eksploratif
+qqnorm(sisaan)
+
+#Normal Q-Q Plot
+qqline(sisaan, col = "#662549", lwd = 2)
+
+plot(fittedvalue, sisaan, col = "#662549", pch = 20, xlab = "Sisaan", ylab = "Fitted Values", main = "Sisaan vs Fitted Values")
+abline(a = 0, b = 0, lwd = 2)
+
+#Histogram Sisaan
+hist(sisaan, col = "#662549")
+
+plot(seq(1,41,1), sisaan, col = "#662549", pch = 20, xlab = "Sisaan", ylab = "Order", main = "Sisaan vs Order")
+
+lines(seq(1,41,1), sisaan, col = "#FF9B82")
+abline(a = 0, b = 0, lwd = 2)
+```
+Berdasarkan hasil Normal Q-Q Plot menunjukkan bahwa sisaan cenderung menyebar normal. 
+Berdasarkan histogram sisaan terlihat bahwa sisaan menyebar ke kanan (positive skewness). 
+Berdasarkan Plot sisaan vs Order, terlihat bahwa sisaan terdapat pola naik turun. Hal tersebut menunjukkan adanya autokorelasi karena ada pola antar sisaan.
+
+## Uji Formal Normality Test
+
+H0 : sisaan mengikuti sebaran normal
+H1 : Sisaan tidak mengikuti sebaran normal
+
+```{r}
+ks.test(sisaan, "pnorm", mean=mean(sisaan), sd=sd(sisaan))
+```
+Berdasarkan tes normalitas menggunakan Kolmogrov-Smirnov Test didapatkan $$p value > \alpha$$ 5% yang artinya sisaan menyebar normal (terima H0).
+
+```{r}
+#ACF dan PACF identifikasi autokorelasi
+acf(sisaan)
+pacf(sisaan)
+```
+Menurut Plot ACF dan PACF, terlihat bahwa terdapat garis melewati batas selang. Artinya, terdapat autokorelasi dalam model.
+
+## Uji Formal: Durbin Watson
+H0: Tidak ada autokorelasi
+H1: Ada autokorelasi
+```{r}
+dwtest(model)
+```
+Hasil tes autokorelasi menggunakan Durbin-Watson Test didapatkan nilai $$p value < \alpha$$ 5% artinya terjadi autokorelasi. Selain itu, didapatkan nilai $$DW = 0.43743$$. Pada analisis ini $n = 41$ dan $k = 3$ sehingga nilai $DL = 1.3480$ dan $DU = 1.6603$. Artinya terjadi autokorelasi positif.
+
+## Penanganan Autokorelasi menggunakan Metode Cochrane-Orcutt
+```{r}
+Cochrane_Orcutt<-cochrane.orcutt(model)
+Cochrane_Orcutt
+dwtest(Cochrane_Orcutt)
+```
+$$y_i=-37714.925547+19.166264X1_i-0.009780X2_i-0.000401X3_t$$
+Berdasarkan metode Cochrane-Orcutt, nilai $$p value = 0.02522$$ (meningkat). Artinya, belum cukup bukti untuk menyatakan sisaan terdapat autokorelasi pada taraf nyata 5%. Nilai $ρ ̂$ optimum yang digunakan adalah 0.851873.
+Nilai $DW = 1.4258$.  Hasil ini menunjukkan nilai DW belum berada dalam selang antara DU< DW< 4-DU sehingga masih ada autokorelasi, yaitu autokorelasi positif.
+
+## Transformasi Manual
+
+```{r}
+#Rho Optimum
+rho <- Cochrane_Orcutt$rho
+rho
+```
+```{r}
+#Transformasi Manual
+Harga.trans<- data$Harga[-1]-data$Harga[-41]*rho
+Tahun.trans<- data$Tahun[-1]-data$Tahun[-41]*rho
+Panen.trans<- data$Panen[-1]-data$Panen[-41]*rho
+Produksi.trans<- data$Produksi[-1]-data$Produksi[-41]*rho
+
+CO_manual<- lm(Harga.trans~Tahun.trans+Panen.trans+Produksi.trans)
+summary(CO_manual)
+```
+Hasil model transformasi bukan merupakan model sesungguhnya. Koefisien regresi masih perlu dicari kembali mengikuti $β_0^*=β_0+ρ ̂β_0$ dan $β_1^*=β_1$
+
+#Mencari Penduga Koefisien Regresi setelah Transformasi ke Persamaan Awal
+
+```{r}
+#Mencari Penduga Koefisien Regresi setelah Transformasi ke Persamaan Awal
+b0bintang <- CO_manual$coefficients[-c(2,3,4)]
+b0 <- b0bintang/(1-rho)
+b0
+b1 <- CO_manual$coefficients[-c(1,3,4)]
+b1
+b2 <- CO_manual$coefficients[-c(1,2,4)]
+b2
+b3 <- CO_manual$coefficients[-c(1,2,3)]
+b3
+```
+Hasil perhitungan koefisien regresi di atas menghasilkan hasil yang sama. Selanjutnya dilakukan pemeriksaan autokorelasi kembali.
+
+```{r}
+lmtest::dwtest(Cochrane_Orcutt, alternative = 'two.sided')
+```
+$$p value > 0.05$$. Artinya terima H0. Maka, belum cukup bukti menyatakan bahwa terdapat autokorelasi pada model. Oleh karena itu, masalah autokorelasi terselesaikan menggunakan metode ini.
+
+## Penangan Autokorelasi dengan Metode Hildreth-Lu
+
+```{r}
+#Hildreth-Lu
+hildreth.lu.func<- function(r, model){
+  x1 <- model.matrix(model)[,2]
+  x2 <- model.matrix(model)[,3]
+  x3 <- model.matrix(model)[,4]
+  
+  y <- model.response(model.frame(model))
+  n <- length(y)
+  t <- 2:n
+  
+  y <- y[t]-r*y[t-1]
+  x1 <- x1[t]-r*x1[t-1]
+  x2 <- x2[t]-r*x2[t-1]
+  x3 <- x3[t]-r*x3[t-1]
+  
+  return(lm(y~x1+x2+x3))
+}
+
+#Pencarian rho yang meminimumkan SSE
+r <- c(seq(0.1,0.9, by= 0.1))
+tab <- data.frame("rho" = r, "SSE" = sapply(r, function(i){deviance(hildreth.lu.func(i, model))}))
+round(tab, 4)
+```
+Berdasarkan iterasi rho dari rentang 0.1 sampai 0.9 dengan looping sebesar 0.1 didapatkan rho teroptimum adalah rho = 0.9 dengan nilai SSE terkecil. Namun, hasil tersebut masih kurang teliti sehingga akan dicari kembali rho yang lebih optimum dengan ketelitian yang lebih. Supaya rho yang didapatkan lebih teliti selanjutnya dilakukan iterasi kembali dari selang 0.8 sampai 0.9 dengan looping sebesar 0.001
+
+```{r}
+#Rho optimal di sekitar 0.4
+rOpt <- seq(0.8,0.9, by= 0.001)
+tabOpt <- data.frame("rho" = rOpt, "SSE" = sapply(rOpt, function(i){deviance(hildreth.lu.func(i, model))}))
+head(tabOpt[order(tabOpt$SSE),])
+
+#Grafik SSE optimum
+par(mfrow = c(1,1))
+plot(tab$SSE ~ tab$rho , type = "l", xlab = "Rho", ylab = "SSE")
+abline(v = tabOpt[tabOpt$SSE==min(tabOpt$SSE),"rho"], lty = 2, col="red",lwd=2)
+text(x=0.852, y=0.2397500, labels = "rho=0.341", cex = 0.8)
+```
+Perhitungan yang dilakukan menunjukkan bahwa nilai rho
+optimum, yaitu saat SSE terkecil terdapat pada nilai $ρ=0.852$. Hal tersebut juga ditunjukkan pada plot SSE Optimum. Selanjutnya, model didapatkan dengan mengevaluasi nilai rho ke dalam fungsi `hildreth.lu.func`, serta dilanjutkan dengan pengujian autokorelasi dengan uji Durbin-Watson. Namun, setelah pengecekan tersebut tidak lupa koefisien regresi tersebut digunakan untuk transformasi balik. Persamaan hasil transformasi itulah yang menjadi persamaan sesungguhnya.
+
+```{r}
+#Model terbaik
+model_HL <- hildreth.lu.func(0.852, model)
+summary(model_HL)
+
+#Transformasi Balik
+cat("y = ", coef(model_HL)[1]/(1-0.852), "+", coef(model_HL)[2],"x1","+", coef(model_HL)[3],"x2","+", coef(model_HL)[4],"x3", sep = "")
+
+#Deteksi autokorelasi
+dwtest(model_HL)
+```
+Setelah dilakukan tranformasi balik, didapatkan model dengan metode Hildreth-Lu sebagai berikut. $$y_i=-37714.19+19.1659x_t-0.00978165x2-0.0004007806x3$$
+Hasil uji Durbin-Watson menunjukkan bahwa nilai DW sebesar $1.426$ yang masih kurang dari nilai DU sehingga masih terdapat autokorelasi. Hal ini juga dinyatakan oleh nilai p-value < alpha 5%. 
+
+## Perbandingan Nilai SSE dari Ketiga Metode
+```{r}
+#Perbandingan
+sse_Modelawal <- anova(model)$`Sum Sq`[-c(1,2,3)]
+sse_ModelCO <- anova(CO_manual)$`Sum Sq`[-c(1,2,3)]
+sse_ModelHL <- anova(model_HL)$`Sum Sq`[-c(1,2,3)]
+mse_Modelawal <- sse_Modelawal/length(data$Harga)
+mse_ModelCO <- sse_ModelCO/length(data$Harga)
+mse_ModelHL <- sse_ModelHL/length(data$Harga)
+akurasi <- matrix(c(sse_Modelawal,sse_ModelCO,sse_ModelHL,
+                    mse_Modelawal,mse_ModelCO,mse_ModelHL),nrow=2,ncol=3,byrow = T)
+colnames(akurasi) <- c("Model Awal", "Model Cochrane-Orcutt", "Model Hildreth-Lu")
+row.names(akurasi) <- c("SSE","MSE")
+akurasi
+kable(akurasi)
+```
+Hasil penanganan autokorelasi dengan metode Cochrane-Orcutt dan Hildreth-Lu memiliki SSE yang tidak jauh berbeda, pada metode Hildreth-Lu dan lebih baik dibandingkan model awal sebesar $403335.477$. Namun, autokorelasi tetap terjadi dan tidak tertangani oleh kedua metode ini.
+
+Berdasarkan hasil penanganan autokorelasi di atas, metode Cochrane-Orcutt dan Hildreth-Lu memiliki SSE yang lebih kecil dan lebih baik dibandingkan model awal. Pada kasus ini, metode Cochrane-Orcutt dan Hildreth-Lu lebih efektif digunakan untuk menangani autokorelasi.
 

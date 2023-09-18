@@ -255,5 +255,5 @@ points(test$Xt, fore.ardl$forecasts,col="green")
 lines(test$Xt, fore.ardl$forecasts,col="green")
 legend("topleft",c("aktual", "koyck","DLM 1","DLM 2", "autoregressive"), lty=1, col=c("black","red","blue","orange","green"), cex=0.8)
 ```
-Berdasarkan plot tersebut, terlihat bahwa plot yang paling mendekati data aktualnya adalah Model koyck, sehingga dapat disimpulkan model terbaik dalam hal ini adalah model regresi koyck.
+Berdasarkan plot tersebut, terlihat bahwa plot yang paling mendekati data aktualnya adalah Model koyck, sehingga dapat disimpulkan model terbaik dalam hal ini adalah model regresi koyck
 
